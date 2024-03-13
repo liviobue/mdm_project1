@@ -3,7 +3,7 @@ import scrapy
 from ..items import YahooscrapingItem
 
 class MostactiveSpider(scrapy.Spider):
-    name = 'mostactive_part1'
+    name = 'scrape_tesla'
     def start_requests(self):
         urls = ['https://finance.yahoo.com/quote/TSLA?p=TSLA']  # Microsoft Stocks start URL
         for url in urls:
