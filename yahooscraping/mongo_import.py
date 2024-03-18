@@ -12,7 +12,7 @@ class JsonLinesImporter:
     def to_document(self, item):
         # Convert each item in the JSON file to a MongoDB document
         document = {
-            "stock_name": item.get("stock_name", []),
+            "stock_name": item.get("stock_name", ""),
             "intraday_price": item.get("intraday_price", []),
             "price_change": item.get("price_change", [])
         }
@@ -28,8 +28,18 @@ class JsonLinesImporter:
         with open(self.input_file, 'r') as f:
             data = json.load(f)
             for item in data:
-                document = self.to_document(item)
-                collection.insert_one(document)
+                # Check if stock_name exists
+                existing_document = collection.find_one({"stock_name": item.get("stock_name", "")})
+                if existing_document:
+                    # If stock_name exists, update the document
+                    collection.update_one({"stock_name": item.get("stock_name", "")}, {"$push": {
+                        "intraday_price": {"$each": item.get("intraday_price", [])},
+                        "price_change": {"$each": item.get("price_change", [])}
+                    }})
+                else:
+                    # If stock_name does not exist, insert a new document
+                    document = self.to_document(item)
+                    collection.insert_one(document)
         print("Data imported successfully.")
 
 if __name__ == '__main__':
