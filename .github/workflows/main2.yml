@@ -21,4 +21,4 @@ jobs:
       run: pip install pymongo yfinance
 
     - name: Run Python script
-      run: python mongo_import_historical.py -c stock -s TSLA -u ${{ secrets.MONGODB_URI }}
+      run: python yahooscraping/mongo_import_historical.py -c stock -s TSLA -u ${{ secrets.MONGODB_URI }}
