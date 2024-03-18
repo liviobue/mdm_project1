@@ -1,0 +1,25 @@
+name: Run Python Script Daily
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Runs every day at midnight UTC
+
+jobs:
+  run_script:
+    name: Run Python Script
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.12" # Replace with your Python version
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt # If you have any requirements, replace with your requirements file
+
+    - name: Run Python script
+      run: python mongo_import.py -c stock -u "${{ secrets.MONGODB_URI }}" # Replace 'connection string' with your secret name
