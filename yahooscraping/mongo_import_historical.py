@@ -1,9 +1,24 @@
 import argparse
-import pandas as pd
 import yfinance as yf
 from pymongo import MongoClient
 
+def check_mongo_connection(mongo_uri):
+    try:
+        client = MongoClient(mongo_uri)
+        db = client["mongodb-buergli1"]
+        client.server_info()  # Check if connected
+        client.close()
+        print('Connected to mongo')
+        return True
+    except Exception as e:
+        print(f"Error connecting to MongoDB: {e}")
+        return False
+
 def import_historical_data(collection_name, stock_name, mongo_uri):
+    # Check MongoDB connection
+    if not check_mongo_connection(mongo_uri):
+        return
+
     # Connect to MongoDB
     client = MongoClient(mongo_uri)
     db = client["mongodb-buergli1"]
