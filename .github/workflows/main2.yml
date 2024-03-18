@@ -18,7 +18,7 @@ jobs:
         python-version: "3.12" # Replace with your Python version
 
     - name: Install dependencies
-      run: pip install pymongo yfinance
+      run: pip install -r requirements.txt # If you have any requirements, replace with your requirements file
 
     - name: Run Python script
-      run: python yahooscraping/mongo_import_historical.py -c stock -s TSLA -u "${{ secrets.MONGODB_URI }}"
+      run: python yahooscraping/mongo_import_historical.py -c stock -s TSLA -u '${{ secrets.MONGODB_URI }}'
