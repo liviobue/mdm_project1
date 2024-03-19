@@ -1,6 +1,7 @@
 import argparse
 import yfinance as yf
 from pymongo import MongoClient
+from difflib import SequenceMatcher
 
 def check_mongo_connection(mongo_uri):
     try:
@@ -14,6 +15,17 @@ def check_mongo_connection(mongo_uri):
         print(f"Error connecting to MongoDB: {e}")
         return False
 
+def similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
+
+def find_similar_stock(collection, stock_name):
+    similar_stocks = collection.find({})
+    print(similar_stocks)
+    for stock in similar_stocks:
+        if similar(stock["stock_name"].lower(), stock_name.lower()) > 0.8:  # Adjust similarity threshold as needed
+            return stock["stock_name"]
+    return None
+
 def import_historical_data(collection_name, stock_name, mongo_uri):
     # Check MongoDB connection
     if not check_mongo_connection(mongo_uri):
@@ -24,30 +36,37 @@ def import_historical_data(collection_name, stock_name, mongo_uri):
     db = client["mongodb-buergli1"]
     collection = db[collection_name]
 
+    # Check if similar stock exists
+    existing_stock_name = find_similar_stock(collection, stock_name)
+    if existing_stock_name:
+        stock_name = existing_stock_name
+        print(f"Similar stock name found in the database: {existing_stock_name}")
+
     # Fetch historical data from Yahoo Finance API
     stock_data = yf.download(stock_name, start="2020-01-01", end="2024-01-01")
 
-    # Convert DataFrame to list of dictionaries (documents)
-    historical_data = stock_data.reset_index().to_dict(orient='records')
+    # Extract relevant information
+    intraday_price = list(stock_data['Close'])
+    price_change = list(stock_data['Close'].pct_change())
 
     # Check if stock_name exists
     existing_document = collection.find_one({"stock_name": stock_name})
     if existing_document:
         # If stock_name exists, update the document
         collection.update_one({"stock_name": stock_name}, {"$push": {
-            "historical_data": {"$each": historical_data}
-        }})
-        print(f"Historical data for {stock_name} added to existing arrays successfully.")
+            "intraday_price": {"$each": intraday_price},
+            "price_change": {"$each": price_change}
+        }, "$unset": {"historical_data": ""}})
+        print(f"Intraday price and price change for {stock_name} added to existing arrays successfully.")
     else:
         # If stock_name does not exist, insert a new document
         document = {
             "stock_name": stock_name,
-            "intraday_price": [],
-            "price_change": [],
-            "historical_data": historical_data
+            "intraday_price": intraday_price,
+            "price_change": price_change
         }
         collection.insert_one(document)
-        print(f"Historical data for {stock_name} imported successfully.")
+        print(f"Intraday price and price change for {stock_name} imported successfully.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

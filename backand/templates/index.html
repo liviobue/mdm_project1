@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Model Prediction</h1>
+        <div class="form-group">
+            <label for="input-data">Input Data:</label>
+            <input type="text" id="input-data" placeholder="Enter data...">
+        </div>
+        <button id="predict-btn">Predict</button>
+        <div id="prediction-result"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
