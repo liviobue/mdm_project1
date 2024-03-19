@@ -24,4 +24,5 @@ jobs:
     - name: Change directory and run Python script
       run: |
         cd yahooscraping
+        scrapy crawl scrape_mostactive -o stock.json
         python mongo_import.py -c stock -u "${{ secrets.MONGODB_URI }}"
