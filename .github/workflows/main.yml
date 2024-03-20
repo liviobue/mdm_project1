@@ -25,4 +25,4 @@ jobs:
       run: |
         cd yahooscraping
         scrapy crawl scrape_mostactive -o stock.json
-        python mongo_import.py -c stock -u "${{ secrets.MONGODB_URI }}"
+        python mongo_import.py -c stock -u '${{ secrets.MONGODB_URI }}'

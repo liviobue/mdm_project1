@@ -19,8 +19,7 @@ def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
 def find_similar_stock(collection, stock_name):
-    similar_stocks = collection.find({})
-    print(similar_stocks)
+    similar_stocks = collection.find()
     for stock in similar_stocks:
         if similar(stock["stock_name"].lower(), stock_name.lower()) > 0.8:  # Adjust similarity threshold as needed
             return stock["stock_name"]
@@ -48,25 +47,31 @@ def import_historical_data(collection_name, stock_name, mongo_uri):
     # Extract relevant information
     intraday_price = list(stock_data['Close'])
     price_change = list(stock_data['Close'].pct_change())
+    dates = list(stock_data.index.strftime('%Y-%m-%d'))
+    volume = list(stock_data['Volume'])
 
     # Check if stock_name exists
     existing_document = collection.find_one({"stock_name": stock_name})
     if existing_document:
         # If stock_name exists, update the document
-        collection.update_one({"stock_name": stock_name}, {"$push": {
-            "intraday_price": {"$each": intraday_price},
-            "price_change": {"$each": price_change}
-        }, "$unset": {"historical_data": ""}})
-        print(f"Intraday price and price change for {stock_name} added to existing arrays successfully.")
+        collection.update_one({"stock_name": stock_name}, {"$set": {
+            "intraday_price": intraday_price,
+            "price_change": price_change,
+            "dates": dates,
+            "volume": volume
+        }})
+        print(f"Intraday price, price change, dates, and volume for {stock_name} updated successfully.")
     else:
         # If stock_name does not exist, insert a new document
         document = {
             "stock_name": stock_name,
             "intraday_price": intraday_price,
-            "price_change": price_change
+            "price_change": price_change,
+            "dates": dates,
+            "volume": volume
         }
         collection.insert_one(document)
-        print(f"Intraday price and price change for {stock_name} imported successfully.")
+        print(f"Intraday price, price change, dates, and volume for {stock_name} imported successfully.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

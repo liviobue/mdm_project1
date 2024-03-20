@@ -2,6 +2,8 @@ import argparse
 import json
 from pymongo import MongoClient
 from pathlib import Path
+from datetime import datetime
+from difflib import SequenceMatcher  # Import SequenceMatcher for string similarity comparison
 
 class JsonLinesImporter:
     def __init__(self, input_file, collection, mongo_uri):
@@ -14,7 +16,9 @@ class JsonLinesImporter:
         document = {
             "stock_name": item.get("stock_name", ""),
             "intraday_price": item.get("intraday_price", []),
-            "price_change": item.get("price_change", [])
+            "price_change": item.get("price_change", []),
+            "volume": item.get("volume", []),
+            "current_timestamp": item.get("current_timestamp", []),
         }
         return document
     
@@ -28,19 +32,38 @@ class JsonLinesImporter:
         with open(self.input_file, 'r') as f:
             data = json.load(f)
             for item in data:
-                # Check if stock_name exists
-                existing_document = collection.find_one({"stock_name": item.get("stock_name", "")})
-                if existing_document:
-                    # If stock_name exists, update the document
-                    collection.update_one({"stock_name": item.get("stock_name", "")}, {"$push": {
-                        "intraday_price": {"$each": item.get("intraday_price", [])},
-                        "price_change": {"$each": item.get("price_change", [])}
+                stock_name = item.get("stock_name", "")
+                if isinstance(stock_name, list) and stock_name:
+                    stock_name = stock_name[0]
+                similar_stock_name = self.find_similar_stock(collection, stock_name)
+                if similar_stock_name:
+                    # If a similar stock_name exists, update the document and add current timestamp
+                    collection.update_one({"stock_name": similar_stock_name}, {"$push": {
+                        "intraday_price": item.get("intraday_price", []),
+                        "price_change": item.get("price_change", []),
+                        "volume": item.get("volume", []),
+                        "current_timestamp": item.get("current_timestamp", []),
                     }})
                 else:
-                    # If stock_name does not exist, insert a new document
+                    # If stock_name does not exist, insert a new document with current timestamp
                     document = self.to_document(item)
                     collection.insert_one(document)
         print("Data imported successfully.")
+    
+    def similar(self, a, b):
+        # Function to calculate similarity between two strings
+        return SequenceMatcher(None, a, b).ratio()
+    
+    def find_similar_stock(self, collection, stock_name):
+        # Function to find similar stock names in the collection
+        similar_stocks = collection.find({})
+        for stock in similar_stocks:
+            stock_name_in_db = stock["stock_name"]
+            if isinstance(stock_name_in_db, list) and stock_name_in_db:  # Check if it's a non-empty list
+                stock_name_in_db = stock_name_in_db[0]  # Take the first item in the list
+            if self.similar(stock_name_in_db.lower(), stock_name.lower()) > 0.8:  # Adjust similarity threshold as needed
+                return stock["stock_name"]
+        return None
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
