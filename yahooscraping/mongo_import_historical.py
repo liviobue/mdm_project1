@@ -21,7 +21,12 @@ def similar(a, b):
 def find_similar_stock(collection, stock_name):
     similar_stocks = collection.find()
     for stock in similar_stocks:
-        if similar(stock["stock_name"].lower(), stock_name.lower()) > 0.8:  # Adjust similarity threshold as needed
+        stock_name_in_db = stock["stock_name"]
+        if isinstance(stock_name_in_db, list) and stock_name_in_db:  # Check if it's a non-empty list
+            stock_name_in_db = stock_name_in_db[0]  # Take the first item in the list
+        if stock_name in stock_name_in_db:
+            return stock["stock_name"]
+        if similar(stock_name_in_db.lower(), stock_name.lower()) > 0.8:  # Adjust similarity threshold as needed
             return stock["stock_name"]
     return None
 
@@ -34,15 +39,17 @@ def import_historical_data(collection_name, stock_name, mongo_uri):
     client = MongoClient(mongo_uri)
     db = client["mongodb-buergli1"]
     collection = db[collection_name]
-
+    symbol = stock_name
     # Check if similar stock exists
     existing_stock_name = find_similar_stock(collection, stock_name)
     if existing_stock_name:
         stock_name = existing_stock_name
+        if isinstance(stock_name, list) and stock_name:  # Check if it's a non-empty list
+            stock_name = stock_name[0]
         print(f"Similar stock name found in the database: {existing_stock_name}")
 
     # Fetch historical data from Yahoo Finance API
-    stock_data = yf.download(stock_name, start="2020-01-01", end="2024-01-01")
+    stock_data = yf.download(symbol, start="2023-12-20", end="2024-01-01")
 
     # Extract relevant information
     intraday_price = list(stock_data['Close'])
@@ -57,8 +64,8 @@ def import_historical_data(collection_name, stock_name, mongo_uri):
         collection.update_one({"stock_name": stock_name}, {"$set": {
             "intraday_price": intraday_price,
             "price_change": price_change,
-            "dates": dates,
-            "volume": volume
+            "volume": volume,
+            "current_timestamp": dates
         }})
         print(f"Intraday price, price change, dates, and volume for {stock_name} updated successfully.")
     else:
@@ -67,8 +74,8 @@ def import_historical_data(collection_name, stock_name, mongo_uri):
             "stock_name": stock_name,
             "intraday_price": intraday_price,
             "price_change": price_change,
-            "dates": dates,
-            "volume": volume
+            "volume": volume,
+            "current_timestamp": dates
         }
         collection.insert_one(document)
         print(f"Intraday price, price change, dates, and volume for {stock_name} imported successfully.")
