@@ -1,5 +1,5 @@
 import scrapy
-from datetime import datetime  # Import datetime module
+from datetime import datetime
 from ..items import YahooscrapingItem
 
 class MostactiveSpider(scrapy.Spider):
