@@ -24,6 +24,7 @@ def find_similar_stock(collection, stock_name):
         stock_name_in_db = stock["stock_name"]
         if isinstance(stock_name_in_db, list) and stock_name_in_db:  # Check if it's a non-empty list
             stock_name_in_db = stock_name_in_db[0]  # Take the first item in the list
+        stock_name_in_db = str(stock_name_in_db)
         if stock_name in stock_name_in_db:
             return stock["stock_name"]
         if similar(stock_name_in_db.lower(), stock_name.lower()) > 0.8:  # Adjust similarity threshold as needed

@@ -14,11 +14,11 @@ class JsonLinesImporter:
     def to_document(self, item):
         # Convert each item in the JSON file to a MongoDB document
         document = {
-            "stock_name": item.get("stock_name", ""),
-            "intraday_price": item.get("intraday_price", []),
-            "price_change": item.get("price_change", []),
-            "volume": item.get("volume", []),
-            "current_timestamp": item.get("current_timestamp", []),
+            "stock_name": [item.get("stock_name", "")],
+            "intraday_price": [float(item.get("intraday_price", [])[0])],
+            "price_change": [float(item.get("price_change", [])[0].replace('(', '').replace(')', '').replace('%', ''))],
+            "volume": [int(item.get("volume", [])[0].replace(',', ''))],
+            "current_timestamp": [item.get("current_timestamp", [])[0]],
         }
         return document
     
@@ -39,10 +39,10 @@ class JsonLinesImporter:
                 if similar_stock_name:
                     # If a similar stock_name exists, update the document and add current timestamp
                     collection.update_one({"stock_name": similar_stock_name}, {"$push": {
-                        "intraday_price": item.get("intraday_price", []),
-                        "price_change": item.get("price_change", []),
-                        "volume": item.get("volume", []),
-                        "current_timestamp": item.get("current_timestamp", []),
+                        "intraday_price": float(item.get("intraday_price", [])[0]),
+                        "price_change": float(item.get("price_change", [])[0].replace('(', '').replace(')', '').replace('%', '')),
+                        "volume": int(item.get("volume", [])[0].replace(',', '')),
+                        "current_timestamp": item.get("current_timestamp", [])[0],
                     }})
                 else:
                     # If stock_name does not exist, insert a new document with current timestamp
@@ -61,6 +61,9 @@ class JsonLinesImporter:
             stock_name_in_db = stock["stock_name"]
             if isinstance(stock_name_in_db, list) and stock_name_in_db:  # Check if it's a non-empty list
                 stock_name_in_db = stock_name_in_db[0]  # Take the first item in the list
+            stock_name_in_db = str(stock_name_in_db)
+            if stock_name in stock_name_in_db:
+                return stock["stock_name"]
             if self.similar(stock_name_in_db.lower(), stock_name.lower()) > 0.8:  # Adjust similarity threshold as needed
                 return stock["stock_name"]
         return None
