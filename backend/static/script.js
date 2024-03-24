@@ -1,3 +1,5 @@
+const baseURL = window.location.origin;
+
 document.addEventListener('DOMContentLoaded', function() {
     const predictBtn = document.getElementById('predict-btn');
     const intradayPriceInput = document.getElementById('intraday-price');
@@ -16,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        fetch('http://127.0.0.1:5000/predict', {
+        fetch(`${baseURL}/predict`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
