@@ -1,12 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
     const predictBtn = document.getElementById('predict-btn');
-    const inputData = document.getElementById('input-data');
+    const intradayPriceInput = document.getElementById('intraday-price');
+    const priceChangeInput = document.getElementById('price-change');
+    const volumeInput = document.getElementById('volume');
     const predictionResult = document.getElementById('prediction-result');
 
     predictBtn.addEventListener('click', function() {
-        const data = inputData.value.trim();
-        if (data === '') {
-            predictionResult.textContent = 'Please enter data.';
+        const intradayPrice = parseFloat(intradayPriceInput.value.trim());
+        const priceChange = parseFloat(priceChangeInput.value.trim());
+        const volume = parseFloat(volumeInput.value.trim());
+
+        // Check if any of the inputs are empty or invalid
+        if (isNaN(intradayPrice) || isNaN(priceChange) || isNaN(volume)) {
+            predictionResult.textContent = 'Please enter valid data for all fields.';
             return;
         }
 
@@ -15,7 +21,11 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ data: data })
+            body: JSON.stringify({
+                intraday_price: intradayPrice,
+                price_change: priceChange,
+                volume: volume
+            })
         })
         .then(response => response.json())
         .then(data => {

@@ -57,7 +57,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Load the machine learning model
-model_path = "model/model.pkl"
+model_path = "../model/model.pkl"
 if os.path.exists(model_path):
     with open(model_path, 'rb') as f:
         model = pickle.load(f)
@@ -79,11 +79,14 @@ def predict():
     try:
         # Get data from request
         data = request.json
+        print(data)  # For debugging purposes
+        
         # Perform any necessary preprocessing on the data
         # For example, convert it to the format expected by the model
+        input_data = [[data['intraday_price']]] #[data['intraday_price'], data['price_change'], data['volume']]
         
         # Make prediction
-        prediction = model.predict(data)
+        prediction = model.predict(input_data)  # Pass input data as a list
         
         # Return the prediction
         return jsonify({'prediction': prediction.tolist()}), 200

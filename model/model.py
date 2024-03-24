@@ -2,10 +2,11 @@ import argparse
 import pandas as pd
 from pymongo import MongoClient
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report
-from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+import numpy as np
 import pickle
+import re
 
 def check_mongo_connection(uri):
     try:
@@ -18,6 +19,7 @@ def check_mongo_connection(uri):
 
 parser = argparse.ArgumentParser(description='Create Model')
 parser.add_argument('-u', '--uri', required=True, help="MongoDB URI with username/password")
+parser.add_argument('-s', '--stock', required=True, help="Stock ticker to model")
 parser.add_argument('-m', '--model_file', required=True, help="File to save the trained model")
 args = parser.parse_args()
 
@@ -34,40 +36,56 @@ client = MongoClient(mongo_uri)
 db = client[mongo_db]
 collection = db[mongo_collection]
 
-# Fetch data from MongoDB
-data = list(collection.find({}, {"_id": 0, "stock_name": 1, "intraday_price": 1, "price_change": 1}))
+pattern = re.compile(args.stock)
 
-# Convert data to DataFrame
-df = pd.DataFrame(data)
+# Fetch data from MongoDB for the specified stock
+data = list(collection.find({ "stock_name": { "$elemMatch": { "$elemMatch": { "$regex": pattern } } } }, 
+                             {"_id": 0, "intraday_price": 1, "price_change": 1, "volume": 1, "current_timestamp": 1}))
 
-# Filter out documents with empty 'intraday_price' arrays
-df = df[df['intraday_price'].apply(lambda x: bool(x))]  
+# Normalize the data and create DataFrame
+df = pd.json_normalize(data)
 
-# Extracting values from arrays
-df['stock_name'] = df['stock_name'].apply(lambda x: x[0])
-df['intraday_price'] = df['intraday_price'].apply(lambda x: float(x[0]))
-df['price_change'] = df['price_change'].apply(lambda x: float(x[0].strip('()').replace('%', '')))
+# Explode the lists to create new rows
+df = df.apply(pd.Series.explode)
 
-# Define target variable
-df['price_change_label'] = pd.cut(df['price_change'], bins=[-float('inf'), 0, float('inf')], labels=['Negative', 'Positive'])
+# Reset the index
+df = df.reset_index(drop=True)
 
-# Features and target variable
-X = df[['intraday_price']]
-y = df['price_change_label']
+# Replace NaN values with 0
+df = df.fillna(0)
 
-# Split data into train and test sets
+# Print the DataFrame
+print(df)
+
+# If the DataFrame is empty, no data was found for the specified stock ticker
+if df.empty:
+    print(f"No data found for stock ticker '{args.stock}'")
+    exit(1)
+else:
+    print("Data retrieved successfully.")
+
+# Prepare features and target variable
+X = df[['intraday_price', 'price_change', 'volume']]
+y = df['intraday_price'].shift(-1)
+
+# Remove last row as there's no target for it
+X = X[:-1]
+y = y[:-1]
+
+# Split data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Create RandomForestClassifier model
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+# Train the RandomForestRegressor
+rf_regressor = RandomForestRegressor(n_estimators=100, random_state=42)
+rf_regressor.fit(X_train, y_train)
 
-# Train model
-model.fit(X_train, y_train)
+# Make predictions
+y_pred = rf_regressor.predict(X_test)
 
-# Save the trained model to disk
-with open(args.model_file, 'wb') as model_file:
-    pickle.dump(model, model_file)
+# Evaluate the model
+mse = mean_squared_error(y_test, y_pred)
+print(f'Mean Squared Error: {mse}')
 
-# Evaluate model
-y_pred = model.predict(X_test)
-print(classification_report(y_test, y_pred))
+# Save the trained model
+with open(args.model_file, 'wb') as f:
+    pickle.dump(rf_regressor, f)

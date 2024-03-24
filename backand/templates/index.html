@@ -10,8 +10,16 @@
     <div class="container">
         <h1>Model Prediction</h1>
         <div class="form-group">
-            <label for="input-data">Input Data:</label>
-            <input type="text" id="input-data" placeholder="Enter data...">
+            <label for="intraday-price">Intraday Price:</label>
+            <input type="number" id="intraday-price" placeholder="Enter intraday price...">
+        </div>
+        <div class="form-group">
+            <label for="price-change">Price Change:</label>
+            <input type="number" id="price-change" placeholder="Enter price change...">
+        </div>
+        <div class="form-group">
+            <label for="volume">Volume:</label>
+            <input type="number" id="volume" placeholder="Enter volume...">
         </div>
         <button id="predict-btn">Predict</button>
         <div id="prediction-result"></div>
