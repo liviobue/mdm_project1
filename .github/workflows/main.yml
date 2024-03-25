@@ -27,10 +27,10 @@ jobs:
         scrapy crawl scrape_mostactive -o stock.json
         python mongo_import.py -c stock -u '${{ secrets.MONGODB_URI }}'
 
-      - name: build model
-        working-directory: model
-        run: python ./model.py -u '${{secrets.MONGODB_URI}}''
+    - name: build model
+      working-directory: model
+      run: python ./model.py -u '${{secrets.MONGODB_URI}}''
 
-      - name: upload model
-        working-directory: model
-        run: python ./save.py -c '${{secrets.AZURE_STORAGE_CONNECTION_STRING}}'
+    - name: upload model
+      working-directory: model
+      run: python ./save.py -c '${{secrets.AZURE_STORAGE_CONNECTION_STRING}}'
