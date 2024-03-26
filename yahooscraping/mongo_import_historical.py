@@ -50,7 +50,7 @@ def import_historical_data(collection_name, stock_name, mongo_uri):
         print(f"Similar stock name found in the database: {existing_stock_name}")
 
     # Fetch historical data from Yahoo Finance API
-    stock_data = yf.download(symbol, start="2023-12-20", end="2024-01-01")
+    stock_data = yf.download(symbol, start="2022-01-01", end="2024-01-01")
 
     # Extract relevant information
     intraday_price = list(stock_data['Close'])
