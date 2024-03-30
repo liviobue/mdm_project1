@@ -4,6 +4,7 @@ import datetime
 import os
 import pickle
 from pathlib import Path
+import numpy as np
 
 import pandas as pd
 from azure.storage.blob import BlobServiceClient
@@ -79,14 +80,13 @@ def predict():
     try:
         # Get data from request
         data = request.json
-        print(data)  # For debugging purposes
-        
-        # Perform any necessary preprocessing on the data
-        # For example, convert it to the format expected by the model
-        input_data = [[data['intraday_price']]] #[data['intraday_price'], data['price_change'], data['volume']]
-        
+        input_data = np.array([data['intraday_price'], data['price_change'], data['volume']])
+
+        # Reshape input_data to a 2D array with one row and three columns
+        input_data_2d = input_data.reshape(1, -1)
+
         # Make prediction
-        prediction = model.predict(input_data)  # Pass input data as a list
+        prediction = model.predict(input_data_2d)
         
         # Return the prediction
         return jsonify({'prediction': prediction.tolist()}), 200
