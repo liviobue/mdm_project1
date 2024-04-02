@@ -34,3 +34,22 @@ jobs:
     - name: upload model
       working-directory: model
       run: python ./save.py -c '${{secrets.AZURE_STORAGE_CONNECTION_STRING}}'
+
+    - name: Output Run Number
+      run: echo ${{ github.run_number }}
+
+    - name: Login to Docker Hub
+      run: docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+    - name: Build Docker image
+      run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/mdm_buerli1_project1:${{ github.run_number }} .
+
+    - name: Push Docker image
+      run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/mdm_buerli1_project1:${{ github.run_number }}
+
+    - name: Redeploy web app in Azure
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'project1-buergli1'
+        images: '${{ secrets.DOCKER_HUB_USERNAME }}/mdm_buerli1_project1:${{ github.run_number }}'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
