@@ -1,3 +1,7 @@
 # mdm_project1
 
-source: https://github.com/iaugustine/WebScraping_Scrapy_YahooFinanceData/tree/main?tab=readme-ov-file
+Project 1 Model Deployment and Maintenance
+
+Data Scraping from yahoo Finance and Historical data from yFinance API
+
+Idea: https://github.com/iaugustine/WebScraping_Scrapy_YahooFinanceData/tree/main?tab=readme-ov-file
